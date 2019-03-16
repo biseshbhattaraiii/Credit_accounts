@@ -1,0 +1,7 @@
+{% for user in users %}
+<a href="{% url 'paid' user.pk %}">Paid</a><a href="{% url 'list-user-credit' user.pk %}">{{user.name}}</a>
+{% endfor %}
+<br>
+{% for item in items %}
+<a href="{% url 'list-credits' item.pk %}">{{item.item_name}}</a>
+{% endfor %}

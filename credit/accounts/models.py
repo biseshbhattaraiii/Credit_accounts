@@ -22,18 +22,31 @@ class Credit(models.Model):
 	paid_date  = models.DateTimeField(auto_now=True)
 	paid_amt = models.IntegerField(default=0)
 	complete_payment = models.BooleanField(default=False)
+	quantity = models.IntegerField(default=0)
+	remaining = models.IntegerField(default=0)
+	total_amt = models.IntegerField(default=0)
 
 	def __str__(self):
 		return self.userdata.name
 
-	def check_complete_payment(quantity , paid ,price, amount_paid):
-		total_amt = quantity * price
-		if paid == True:
-			if total_amt == amount_paid:
-				return True
-			elif total_amt > amount_paid:
-				return False
+	def check_complete_payment(total_amt, amount_paid):
+	
+		if total_amt == int(amount_paid):
+			return True
+		elif total_amt > int(amount_paid):
+			return False
 
+	def total(price, quantity):
+		return int(price) * int(quantity)
+
+
+
+class Cleared(models.Model):
+	name = models.CharField(max_length=200)
+	paid_amt = models.IntegerField(default=0)
+
+	def __str__ (self):
+		return self.name
 
 
 

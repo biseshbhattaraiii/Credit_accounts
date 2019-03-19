@@ -253,7 +253,7 @@ class PaidView(APIView):
 			echo_all("Name : " + user.name + ' | ' +"Status : Cleared" + ' | ' +"Total Amt : Rs."+ str(total_amt) + ' | ' +"Paid amt : Rs."+str(total_paid))
 
 		else:
-			echo_all("Name : Rs." + user.name + ' | ' +"Status : Uncleared" + ' | ' + "Total Amt : Rs."+ str(total_amt) + ' | ' +"Paid amt: Rs." + str(total_paid) + ' | ' + "Remaining : Rs." + str(remaining))
+			echo_all("Name : " + user.name + ' | ' +"Status : Uncleared" + ' | ' + "Total Amt : Rs."+ str(total_amt) + ' | ' +"Paid amt: Rs." + str(total_paid) + ' | ' + "Remaining : Rs." + str(remaining))
 
 		return Response("Worked")
 

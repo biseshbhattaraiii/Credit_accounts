@@ -245,11 +245,11 @@ class PaidView(APIView):
 			print("Not cleared")
 		for i in user.remaining_set.all():
 			remaining = i.remaining_amt_total
-		# if total_amt == total_paid:
-		# 	echo_all("Name : " + user.name + ' | ' +"Status : Cleared" + ' | ' +"Total Amt : "+ str(total_amt) + ' | ' +"Paid amt : "+str(total_paid))
+		if total_amt == total_paid:
+			echo_all("Name : " + user.name + ' | ' +"Status : Cleared" + ' | ' +"Total Amt : "+ str(total_amt) + ' | ' +"Paid amt : "+str(total_paid))
 			
-		# else:
-		# 	echo_all("Name : " + user.name + ' | ' +"Status : Uncleared" + ' | ' + "Total Amt : "+ str(total_amt) + ' | ' +"Paid amt:" + str(total_paid) + ' | ' + "Remaining : " + str(remaining))
+		else:
+			echo_all("Name : " + user.name + ' | ' +"Status : Uncleared" + ' | ' + "Total Amt : "+ str(total_amt) + ' | ' +"Paid amt:" + str(total_paid) + ' | ' + "Remaining : " + str(remaining))
 
 		return Response("Worked")
 

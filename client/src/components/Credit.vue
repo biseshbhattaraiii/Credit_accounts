@@ -18,7 +18,7 @@
 <style scoped>
 .tuna {
      background:none!important;
-     color:lightblue;
+     color:darkblue;
      border:none; 
      padding:0!important;
      font: inherit;

@@ -3,7 +3,7 @@
         <td>{{credit.name}}</td>
         <td>{{credit.given_date}}</td>
         <td>{{credit.total_amt}}</td>
-        <td>{{credit.remaining}}</td>
+        <td>{{credit.remaining_current}}</td>
         <td ><a href="#"  v-on:click="$emit('get-user', credit.userdata)">Clear</a></td>     </tr>
 </template>
 

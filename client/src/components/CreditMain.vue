@@ -2,13 +2,13 @@
 
   <body>
 
-    <!-- Navigation -->
-
-
-    <!-- Page Content -->
     
     <div class="container">
-      <a href="http://127.0.0.1:8000/admin/">Admin</a>
+      <a href="#" v-on:click="admin_check">Admin</a>
+      <div v-if="admin">
+      <input type="password" v-model="admin_password" placeholder="Password"/> 
+      <button  v-on:click="submitAdmin">Submit</button>
+    </div>
       <a href="#" v-on:click="reload">Reload</a>
  
       <div class="row">
@@ -52,8 +52,10 @@
             <div class="card-body">
               <h2 v-if="of_item" class="card-title">{{item_name}}</h2>
               <h2 v-if="of_user" class="card-title">{{this.searchitem}}</h2>
-              <h4>No of credits : {{this.no_of_credits}}</h4>
-              <span>Total remaining amount : {{total_amt}}</span>
+              <h4 class="card-title">No of credits : {{this.no_of_credits}}</h4>
+              <h5 v-if="of_user">Total remaining amount : {{remaining_amt_total}}</h5>
+              <h5 v-if="of_user">Total paid amt : {{paid_amt_total}}</h5>
+
               <br>
               <hr>
               <ul v-if="not_paid" class="list-unstyled mb-0" v-for="c in credit_data" :key="c.id">
@@ -62,7 +64,7 @@
                 <li>Item price : {{c.price}}</li>
                 <li>Quantity : {{c.quantity}}</li>
                 <li v-if="of_item">Creditor : {{c.name}}</li>
-                <li>Remaining : {{c.remaining}}</li>
+                <!-- <li>Remaining : {{c.remaining}}</li> -->
                 <br>
               </ul>
 
@@ -258,7 +260,13 @@ export default {
       price : null,
       init_total : [],
       add : true,
-      init_total_amt : null
+      init_total_amt : null,
+      paiddata : [],
+      remaining_amt_total : null,
+      paid_amt_total : null,
+      admin : false,
+      admin_password : null
+
     }
   },
   methods : {
@@ -305,6 +313,9 @@ export default {
    
     },
     submitCredit(){
+      if(this.item == null || this.user == null || this.paid_amt == null || this.quantity == null){
+        alert("Please fill in the input !")
+      }
       axios.post('http://127.0.0.1:8000/api/credit/', {
             item_name : this.item,
             username : this.user,
@@ -323,19 +334,35 @@ export default {
       this.user_id = id
       this.no_view = true;
       this.paid = true;
-      axios.get(`http://127.0.0.1:8000/api/user/${id}/`)
+      axios.get(`http://127.0.0.1:8000/api/user/remain/${id}/`)
       .then(response => {
         response.data.forEach(k => {
           this.total.push(k.price * k.quantity)
-         
-          this.paid_amt = k.paid_amt
+          this.total_amt = k.paid_amt_total + k.remaining_amt_total
+          this.paid_amt = k.paid_amt_total
+          console.log(k)
+          // this.paid_amt = k.paid_amt
         })
-         const sum = this.total.reduce((partial_sum, a) => partial_sum + a);
-         console.log(sum) 
-         this.total_amt = sum
+         
       })
     },
+    admin_check(){
+      this.admin = true
+    },
+    submitAdmin(){
+        if (this.admin_password == "linux123"){
+          this.admin_password = ''
+          window.location.href = 'http://127.0.0.1:8000/admin'
+        }else{
+          alert("Wrong password")
+          this.admin_password = ''
+          this.admin = false
+        }
+    },
     SaveUser(){
+      if(this.username == null){
+        alert("Please fill in the form !")
+      }
       axios.post('http://127.0.0.1:8000/api/users/', {
         name : this.username
       })
@@ -343,6 +370,9 @@ export default {
       this.$router.go()
     },
     SaveItem(){
+      if(this.itemname == null || this.price == null){
+        alert("Please fill in the input")
+      }
       axios.post('http://127.0.0.1:8000/api/items/', {
         item_name : this.itemname,
         price : this.price
@@ -351,6 +381,8 @@ export default {
       this.$router.go()
     },
     get_item_credit(id){
+      this.total_amt = 0
+      this.total = []
       this.no_of_credits = null
       this.of_user = false
       this.show = false;
@@ -363,6 +395,7 @@ export default {
           console.log(k)
           this.item_name = k.item_name
           this.credit_data.push(k)
+          this.total.push(k)
         })
         
       })
@@ -371,31 +404,40 @@ export default {
       this.show = true
     },
     searchUser(){
+      if(this.searchitem == null){
+        alert("Please fill in the input !")
+      }
       this.total_amt = 0
       this.total = []
       this.no_of_credits = null
       this.of_item = false
       this.show = false
       this.credit_data = []
+      this.remaining_amt_total = null
+      this.paid_amt_total = null
       axios.get('http://127.0.0.1:8000/api/search/?username='+this.searchitem)
       .then(response => {
         console.log(response.data)
         this.no_of_credits = response.data.length
         if(this.no_of_credits != 0){
           response.data.forEach(k => {
+          console.log(k.is_paid)
           this.credit_data.push(k)
+          this.paiddata.push(k.paid_amt)
           this.total.push(k.remaining)
+          axios.get('http://127.0.0.1:8000/api/user/remain/?username='+this.searchitem)
+          .then(response => {
+            response.data.forEach(k => {
+              console.log(k)
+              this.remaining_amt_total = k.remaining_amt_total
+              this.paid_amt_total = k.paid_amt_total
+            })
+          })
         })
-        }
-    
-        if (this.total.length != 0){
-              const sum = this.total.reduce((partial_sum, a) => partial_sum + a);
-              console.log(sum) 
-              this.total_amt = sum
         }else{
-          this.total_amt = 0
+          // this.of_user = False
         }
-   
+        console.log(this.total)
         this.of_user = true
         this.show = true;
 
@@ -404,8 +446,11 @@ export default {
     
     },
     getAllCredits(){
+
       axios.get('http://127.0.0.1:8000/api/credit/')
       .then(response => {
+        console.log(response.data)
+
         response.data.forEach(k => {
           this.credits.push(k)
         })
@@ -414,6 +459,7 @@ export default {
 
     
     }
+
   },
 
   mounted(){

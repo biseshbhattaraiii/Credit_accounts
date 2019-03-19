@@ -23,7 +23,7 @@ class Credit(models.Model):
 	paid_amt = models.IntegerField(default=0)
 	complete_payment = models.BooleanField(default=False)
 	quantity = models.IntegerField(default=0)
-	remaining = models.IntegerField(default=0)
+	remaining_current = models.IntegerField(default=0)
 	total_amt = models.IntegerField(default=0)
 
 	def __str__(self):
@@ -48,6 +48,14 @@ class Cleared(models.Model):
 	def __str__ (self):
 		return self.name
 
+
+class Remaining(models.Model):
+	userdata = models.ForeignKey(UserData, on_delete=models.CASCADE)
+	remaining_amt_total = models.IntegerField(default=0)
+	paid_amt_total = models.IntegerField(default=0)
+
+	def __str__(self):
+		return self.userdata.name
 
 
 

@@ -1,9 +1,9 @@
 from django.shortcuts import render, redirect
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Credit, Item, UserData, Cleared
+from .models import Credit, Item, UserData, Cleared, Remaining
 import requests
-from .serializers import UserDataSerializer, CreditSerializer, ItemSerializer, UserCreditSerializer
+from .serializers import UserDataSerializer, CreditSerializer, ItemSerializer, UserCreditSerializer, RemainingSerializer
  
 
 TOKEN = '665426202:AAE1zzsXrjos9NO6zflZbDzA8iQZyIAIHvY'
@@ -79,6 +79,7 @@ class ListCredit(APIView):
 	def post(self, request, format=None):
 		item_name = request.data['item_name']
 		username = request.data['username']
+		paid_all = []
 		for i in Item.objects.all():
 			if i.item_name == item_name:
 				item = i.id
@@ -88,21 +89,48 @@ class ListCredit(APIView):
 				userdata = i.id
 		quantity = request.data['quantity']
 		paid_amt = request.data['paid_amt']
-		root = Credit()
-		item_  = Item.objects.get(pk=item)
-		root.item = item_
-		userdata_ = UserData.objects.get(pk=userdata)
-		root.userdata = userdata_
-		root.quantity = quantity
-		root.paid_amt = paid_amt
-		root.is_paid = False
-		root.complete_payment = False
-		total_amt = Credit.total(item_price, quantity)
-		root.remaining = total_amt - int(paid_amt)
-		root.total_amt = total_amt
-		print(root.remaining)
-		root.save()
+		item = Item.objects.get(pk=item)
+		current_user = UserData.objects.get(pk=userdata)
+		user_credits = current_user.credit_set.all()
+		_paid_amt = []
+		_total_amt = []
+		for i in user_credits:
+			_paid_amt.append(i.paid_amt)
+			_total_amt.append(i.total_amt)
+		# print(_paid_amt)
+		total_paid_amt = int(paid_amt) + sum(_paid_amt)
+		# print(total_paid_amt)
+		current_total = Credit.total(item_price, quantity)
+		current_remaining = current_total - int(paid_amt)
+		total_amt = current_total + sum(_total_amt)
+		user_remaining_update = current_user.remaining_set.all()
+		print(len(user_remaining_update))
+		if len(user_remaining_update) != 0:
+			for i in user_remaining_update:
+				print("fjfj", i.remaining_amt_total, i.paid_amt_total)
+				i.remaining_amt_total = i.remaining_amt_total + current_remaining
+				i.paid_amt_total += int(paid_amt)
+				i.save()
+		else: 
+			root = Remaining()
+			root.userdata = current_user
+			root.remaining_amt_total = total_amt - total_paid_amt
+			root.paid_amt_total = total_paid_amt
+			root.save()
+		soot = Credit()
+		soot.total_amt = current_total
+		soot.paid_amt = int(paid_amt)
+		soot.userdata = current_user
+		soot.item = item
+		soot.quantity = quantity
+		soot.remaining_current = current_total - int(paid_amt)
+		if int(paid_amt) == 0:
+			soot.is_paid = False
+		else:
+			soot.is_paid = True
+		soot.save()
 		return Response("Saved")
+
 
 
 class SearchUserCredits(APIView):
@@ -171,6 +199,26 @@ def echo_all(message):
         except Exception as e:
             print(e ,"This is the error")
 
+class RemainingView(APIView):
+	def get(self, request):
+		username = request.GET.get('username')
+		for i in UserData.objects.all():
+			if i.name == username:
+				user_id = i.id
+		user = UserData.objects.get(pk=user_id)
+		user_remaining = user.remaining_set.all()
+		serializer = RemainingSerializer(user_remaining, many=True)
+		return Response(serializer.data)
+
+
+class UserRemainingView(APIView):
+	def get(self, request, pk=None):
+		user = UserData.objects.get(pk=pk)
+		user_remaining = user.remaining_set.all()
+		serializer = RemainingSerializer(user_remaining, many=True)
+		return Response(serializer.data)
+
+
 class PaidView(APIView):
 
 	def post(self,request):
@@ -180,27 +228,28 @@ class PaidView(APIView):
 		print(type(id_), type(int(paid_amt)) , type(total_amt))
 		user = UserData.objects.get(pk=id_)
 		user_credit = user.credit_set.all()
-		for u in user_credit:
-			total_paid = u.paid_amt + int(paid_amt)
-			if total_paid == total_amt:
-				u.is_paid = True
-				u.complete_payment = True
-				root = Cleared()
-				root.name = user.name
-				root.paid_amt = total_paid
-				root.save()
-				u.delete()
-			else:
-				current_paid = u.paid_amt + int(paid_amt)
-				remaining = total_amt - current_paid
-				u.remaining = remaining
-				u.paid_amt = current_paid
-				u.save()
-		if total_amt == total_paid:
-			echo_all("Name : " + user.name + ' | ' +"Status : Cleared" + ' | ' +"Total Amt : "+ str(total_amt) + ' | ' +"Paid amt : "+str(paid_amt))
+		user_remaining = user.remaining_set.all()
+		for i in user.remaining_set.all():
+			i.remaining_amt_total -= int(paid_amt)
+			i.paid_amt_total += int(paid_amt)
+			i.save()
+		for i in user.remaining_set.all():
+			total_paid = i.paid_amt_total
+			total_remain = i.remaining_amt_total
 
+		if total_amt == total_paid:
+			user_credit.delete()
+			user_remaining.delete()
+			print("All cleared")
 		else:
-			echo_all("Name : " + user.name + ' | ' +"Status : Uncleared" + ' | ' + "Total Amt : "+ str(total_amt) + ' | ' +"Paid amt:" + str(paid_amt))
+			print("Not cleared")
+		for i in user.remaining_set.all():
+			remaining = i.remaining_amt_total
+		# if total_amt == total_paid:
+		# 	echo_all("Name : " + user.name + ' | ' +"Status : Cleared" + ' | ' +"Total Amt : "+ str(total_amt) + ' | ' +"Paid amt : "+str(total_paid))
+			
+		# else:
+		# 	echo_all("Name : " + user.name + ' | ' +"Status : Uncleared" + ' | ' + "Total Amt : "+ str(total_amt) + ' | ' +"Paid amt:" + str(total_paid) + ' | ' + "Remaining : " + str(remaining))
 
 		return Response("Worked")
 

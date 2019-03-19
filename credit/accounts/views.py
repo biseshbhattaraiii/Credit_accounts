@@ -238,6 +238,10 @@ class PaidView(APIView):
 			total_remain = i.remaining_amt_total
 
 		if total_amt == total_paid:
+			root = Cleared()
+			root.name = user.name
+			root.paid_amt = total_paid
+			root.save()
 			user_credit.delete()
 			user_remaining.delete()
 			print("All cleared")
@@ -246,10 +250,10 @@ class PaidView(APIView):
 		for i in user.remaining_set.all():
 			remaining = i.remaining_amt_total
 		if total_amt == total_paid:
-			echo_all("Name : " + user.name + ' | ' +"Status : Cleared" + ' | ' +"Total Amt : "+ str(total_amt) + ' | ' +"Paid amt : "+str(total_paid))
-			
+			echo_all("Name : " + user.name + ' | ' +"Status : Cleared" + ' | ' +"Total Amt : Rs."+ str(total_amt) + ' | ' +"Paid amt : Rs."+str(total_paid))
+
 		else:
-			echo_all("Name : " + user.name + ' | ' +"Status : Uncleared" + ' | ' + "Total Amt : "+ str(total_amt) + ' | ' +"Paid amt:" + str(total_paid) + ' | ' + "Remaining : " + str(remaining))
+			echo_all("Name : Rs." + user.name + ' | ' +"Status : Uncleared" + ' | ' + "Total Amt : Rs."+ str(total_amt) + ' | ' +"Paid amt: Rs." + str(total_paid) + ' | ' + "Remaining : Rs." + str(remaining))
 
 		return Response("Worked")
 
